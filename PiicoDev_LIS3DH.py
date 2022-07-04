@@ -1,11 +1,11 @@
 """
 LIS3DH MicroPython Library for PiicoDev
 Created by Michael Ruppe for Core Electronics (www.core-electronics.com.au)
-Project hosted at https://github.com/...
+Project hosted at https://github.com/CoreElectronics/CE-PiicoDev-Accelerometer-LIS3DH-MicroPython-Module
 Version 1.0 - 2022-06-26
 
 Requires the PiicoDev Unified Library
-https://github.com/...
+https://github.com/CoreElectronics/CE-PiicoDev-Unified
 
 Based on work from from https://github.com/adafruit/Adafruit_CircuitPython_LIS3DH
 """
@@ -40,26 +40,26 @@ AccelerationTuple = namedtuple("acceleration", ("x", "y", "z"))
 def rad2deg(x):
     return x * 180/pi
     
-def _setBit(x, n):
+def _set_bit(x, n):
     return x | (1 << n)
 
-def _clearBit(x, n):
+def _clear_bit(x, n):
     return x & ~(1 << n)
 
-def _writeBit(x, n, b):
+def _write_bit(x, n, b):
     if b == 0:
-        return _clearBit(x, n)
+        return _clear_bit(x, n)
     else:
-        return _setBit(x, n)
+        return _set_bit(x, n)
     
-def _readBit(x, n):
+def _read_bit(x, n):
     return x & 1 << n != 0
     
-def _writeCrumb(x, n, c):
-    x = _writeBit(x, n, _readBit(c, 0))
-    return _writeBit(x, n+1, _readBit(c, 1))
+def _write_crumb(x, n, c):
+    x = _write_bit(x, n, _read_bit(c, 0))
+    return _write_bit(x, n+1, _read_bit(c, 1))
 
-def signedIntFromBytes(x, endian='big'):
+def signed_int_from_bytes(x, endian='big'):
     """Return a 16-bit signed integer (from two's complement)"""
     y = int.from_bytes(x, endian)
     if (y & 0x8000):
@@ -95,7 +95,7 @@ class PiicoDev_LIS3DH(object):
     @property
     def data_ready(self):
         d = self._read(_STATUS_REG, 1)
-        return _readBit(d, 3)
+        return _read_bit(d, 3)
 
     @property
     def deviceID(self):
@@ -113,10 +113,9 @@ class PiicoDev_LIS3DH(object):
         """Set the range in [g]. Valid ranges are 2, 4, 8, 16"""
         valid_ranges = {2:0b00, 4:0b01, 8:0b10, 16:0b11} # key:value -> range[g] : binary code for register
         try: rr = valid_ranges[r]
-        except(KeyError): raise ValueError("range must be one of {}".format(r, list(valid_ranges.keys())))
+        except(KeyError): raise ValueError("range must be one of 2, 4, 8, or 16")
         val = self._read(_CTRL_REG_4, 1)
-        ranges = {2:0b00, 4:0b01, 8:0b10, 16:0b11}
-        val = _writeCrumb(val, 4, rr) # Write new range code
+        val = _write_crumb(val, 4, rr) # Write new range code
         self._write(_CTRL_REG_4, int.to_bytes(val,1,'big'))
         self._range = r
     
@@ -130,7 +129,7 @@ class PiicoDev_LIS3DH(object):
         """Set the data rate [Hz]. Valid rates are 1, 10, 25, 50, 100, 200, 400"""
         valid_rates = {0:0b0000, 1:0b0001, 10:0b0010, 25:0b0011, 50:0b0100, 100:0b0101, 200:0b0110, 400:0b0111} # key:value -> rate[Hz] : binary code for register
         try: rr = valid_rates[r]
-        except(KeyError): raise ValueError("rate must be one of {}".format(r,valid_rates))
+        except(KeyError): raise ValueError("rate must be one of 0, 1, 10, 25, 50, 100, 200, or 400")
         val = self._read(_CTRL_REG_1, 1)  # Get value from register
         val &= 0x0F # mask off last 4 bits
         val = val | rr << 4
@@ -164,12 +163,12 @@ class PiicoDev_LIS3DH(object):
         threshold = threshold | 0x80
         if tap == 0 and click_cfg is None: # disable click interrupt
             val = self._read(_CTRL_REG_3,1)
-            val = _clearBit(val,7) # disable INT1 CLICK
+            val = _clear_bit(val,7) # disable INT1 CLICK
             self._write(_CTRL_REG_3, int.to_bytes(val,1,'big'))
             self._write(_CLICK_CFG, b'\x00') # disable all click detection
             return
         ctrl3 = self._read(_CTRL_REG_3,1)
-        ctrl3 = _setBit(ctrl3,7) # Enable INT1 CLICK
+        ctrl3 = _set_bit(ctrl3,7) # Enable INT1 CLICK
         self._write(_CTRL_REG_3, int.to_bytes(ctrl3,1,'big'))
         self._write(_CTRL_REG_5, b'\x08') # Latch INT1
         
