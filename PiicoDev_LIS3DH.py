@@ -157,10 +157,10 @@ class PiicoDev_LIS3DH(object):
     def angle(self):
         """Return 3-axis tilt angle in degrees"""
         x,y,z = self.acceleration
-        y = rad2deg(atan2(x,z))
-        z = rad2deg(atan2(x,y))
-        x = rad2deg(atan2(y,z))
-        return AngleTuple(x,y,z)
+        ay = rad2deg(atan2(z,x))
+        az = rad2deg(atan2(x,y))
+        ax = rad2deg(atan2(y,z))
+        return AngleTuple(ax,ay,az)
 
     def set_tap(self, tap, threshold=40, time_limit=10, latency=80, window=255, click_cfg=None):
         if not tap in [0,1,2]:
