@@ -126,7 +126,7 @@ class PiicoDev_LIS3DH(object):
         """Return the accelerometer range [g]"""
         return self._rate
     
-    @rate.setter
+    @range.setter
     def rate(self, r):
         """Set the data rate [Hz]. Valid rates are 1, 10, 25, 50, 100, 200, 400"""
         valid_rates = {0:0b0000, 1:0b0001, 10:0b0010, 25:0b0011, 50:0b0100, 100:0b0101, 200:0b0110, 400:0b0111} # key:value -> rate[Hz] : binary code for register
