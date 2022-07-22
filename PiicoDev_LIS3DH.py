@@ -17,7 +17,7 @@ from ustruct import pack, unpack
 from ucollections import namedtuple
 _R_WHOAMI = 0x0F
 _ID = 0x33
-_I2C_ADDRESS = 24
+_I2C_ADDRESS = 0x19
 _OUT_X_L = 0x28
 _CTRL_REG_1 = 0x20
 _CTRL_REG_2 = 0x21
@@ -36,6 +36,7 @@ _STATUS_REG = 0x27
 compat_str = '\nUnified PiicoDev library out of date.  Get the latest module: https://piico.dev/unified \n'
 
 AccelerationTuple = namedtuple("acceleration", ("x", "y", "z"))
+AngleTuple = namedtuple("angle",("x","y","z"))
 
 def rad2deg(x):
     return x * 180/pi
@@ -67,17 +68,18 @@ def signed_int_from_bytes(x, endian='big'):
     return y
 
 class PiicoDev_LIS3DH(object):    
-    def __init__(self, bus=None, freq=None, sda=None, scl=None, address=_I2C_ADDRESS, range=2, rate=400):
+    def __init__(self, bus=None, freq=None, sda=None, scl=None, address=_I2C_ADDRESS, asw=None, range=2, rate=400):
         try:
             if compat_ind >= 1: pass
             else: print(compat_str)
         except: print(compat_str)
-
+        
+        if asw not in [0,1]: self.address = _I2C_ADDRESS # default address used if asw not provided OR invalid
+        else: self.address = [_I2C_ADDRESS, _I2C_ADDRESS-1][asw]
         self.i2c = create_unified_i2c(bus=bus, freq=freq, sda=sda, scl=scl)
-        self.addr = address
         
         try:
-            if self.deviceID != _ID: print("Warning device at {} not recognised as LIS3DH".format(self.addr))
+            if self.deviceID != _ID: print("Warning device at {} not recognised as LIS3DH".format(self.address))
             sleep_ms(5) # guarantee startup
             # Write basic, unchanging settings to the CTRL_REG1,4
             d = 0x07 # Enable X,Y,Z axes
@@ -89,7 +91,7 @@ class PiicoDev_LIS3DH(object):
             self.range = range
             self.rate = rate
         except Exception as e:
-            print(i2c_err_str.format(self.addr))
+            print(i2c_err_str.format(self.address))
             raise e
         
     @property
@@ -100,7 +102,7 @@ class PiicoDev_LIS3DH(object):
     @property
     def deviceID(self):
         """Returns contents of WHO_AM_I register"""
-        x=self.i2c.readfrom_mem(self.addr, _R_WHOAMI, 1)
+        x=self.i2c.readfrom_mem(self.address, _R_WHOAMI, 1)
         return int.from_bytes(x,'big')
     
     @property
@@ -150,10 +152,10 @@ class PiicoDev_LIS3DH(object):
     def angle(self):
         """Return 3-axis tilt angle in degrees"""
         x,y,z = self.acceleration
-        xz = atan2(x,z)
-        xy = atan2(x,y)
-        yz = atan2(y,z)
-        return rad2deg(xz), rad2deg(xy), rad2deg(yz)
+        y = rad2deg(atan2(x,z))
+        z = rad2deg(atan2(x,y))
+        x = rad2deg(atan2(y,z))
+        return AngleTuple(x,y,z)
 
     def set_tap(self, tap, threshold=40, time_limit=10, latency=80, window=255, click_cfg=None):
         if not tap in [0,1,2]:
@@ -167,6 +169,9 @@ class PiicoDev_LIS3DH(object):
             self._write(_CTRL_REG_3, int.to_bytes(val,1,'big'))
             self._write(_CLICK_CFG, b'\x00') # disable all click detection
             return
+        if tap == 0 and click_cfg is not None: # direct register access for power users
+            self._write(_CLICK_CFG, click_cfg)
+        
         ctrl3 = self._read(_CTRL_REG_3,1)
         ctrl3 = _set_bit(ctrl3,7) # Enable INT1 CLICK
         self._write(_CTRL_REG_3, int.to_bytes(ctrl3,1,'big'))
@@ -190,7 +195,7 @@ class PiicoDev_LIS3DH(object):
             return True
         return False
     
-    def shake(self, shake_threshold=20, avg_count=20, total_delay=100):
+    def shake(self, threshold=15, avg_count=40, total_delay=100):
         """Detect when the accelerometer is shaken. Optional parameters:
         :param int shake_threshold: Increase or decrease to change shake sensitivity.
                                     This requires a minimum value of 10.
@@ -217,23 +222,22 @@ class PiicoDev_LIS3DH(object):
             sleep_ms(round(total_delay / avg_count))
         avg = tuple(value / avg_count for value in shake_accel)
         total_accel = sqrt(sum(map(lambda x: x * x, avg)))
-        print(total_accel, shake_threshold)
-        return total_accel > shake_threshold
+        return total_accel > threshold
 
     def _read(self, reg, N, bytestring=False):
         try:
             reg |= 0x80 # bit 7 enables address auto-increment (esoteric feature specific to LIS3DH)
-            d = self.i2c.readfrom_mem(self.addr, reg, N)
+            d = self.i2c.readfrom_mem(self.address, reg, N)
             if bytestring: return d
             tmp = int.from_bytes(d, 'little')
         except:
-            print("Error reading from LIS3DH at address 0x{:02x}".format(self.addr))
+            print("Error reading from LIS3DH at address 0x{:02x}".format(self.address))
             return float('NaN')
         return tmp
         
     def _write(self, reg, data):
         try:
-            self.i2c.writeto_mem(self.addr, reg, data)
+            self.i2c.writeto_mem(self.address, reg, data)
         except:
             print("Error writing to LIS3DH")
             return float('NaN')
