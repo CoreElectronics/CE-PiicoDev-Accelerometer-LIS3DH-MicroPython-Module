@@ -231,7 +231,7 @@ class PiicoDev_LIS3DH(object):
         try:
             reg |= 0x80 # bit 7 enables address auto-increment (esoteric feature specific to LIS3DH)
             d = self.i2c.readfrom_mem(self.address, reg, N)
-            if bytestring: return d
+            if bytestring: return bytes(d)
             tmp = int.from_bytes(d, 'little')
         except:
             print("Error reading from LIS3DH at address 0x{:02x}".format(self.address))
