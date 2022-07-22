@@ -74,7 +74,7 @@ class PiicoDev_LIS3DH:
 	@property
 	def acceleration(self):'Return x,y,z acceleration in a 3-tuple. unit: :math:`m/s^2';d=self._read(_OUT_X_L|128,6,bytestring=True);x,y,z=unpack('<hhh',d);divisors={2:1670.295,4:835.1476,8:417.6757,16:139.1912};den=divisors[self.range];x=x/den;y=y/den;z=z/den;return AccelerationTuple(x,y,z)
 	@property
-	def angle(self):'Return 3-axis tilt angle in degrees';x,y,z=self.acceleration;y=rad2deg(atan2(x,z));z=rad2deg(atan2(x,y));x=rad2deg(atan2(y,z));return AngleTuple(x,y,z)
+	def angle(self):'Return 3-axis tilt angle in degrees';x,y,z=self.acceleration;ay=rad2deg(atan2(z,x));az=rad2deg(atan2(x,y));ax=rad2deg(atan2(y,z));return AngleTuple(ax,ay,az)
 	def set_tap(self,tap,threshold=40,time_limit=10,latency=80,window=255,click_cfg=_A):
 		if not tap in[0,1,2]:raise ValueError('tap must be 0 (disabled), 1 (single-tap), or 2 (double-tap)')
 		if threshold>127 or threshold<0:raise ValueError('threshold out of range (0-127)')
