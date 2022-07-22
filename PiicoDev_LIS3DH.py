@@ -2,7 +2,6 @@
 LIS3DH MicroPython Library for PiicoDev
 Created by Michael Ruppe for Core Electronics (www.core-electronics.com.au)
 Project hosted at https://github.com/CoreElectronics/CE-PiicoDev-Accelerometer-LIS3DH-MicroPython-Module
-Version 1.0 - 2022-06-26
 
 Requires the PiicoDev Unified Library
 https://github.com/CoreElectronics/CE-PiicoDev-Unified
@@ -12,9 +11,13 @@ Based on work from from https://github.com/adafruit/Adafruit_CircuitPython_LIS3D
 
 from PiicoDev_Unified import *
 from math import atan2, pi, sqrt
-# ToDo: branch for struct and ustruct etc.
-from ustruct import pack, unpack
-from ucollections import namedtuple
+try:
+    from ustruct import pack, unpack
+    from ucollections import namedtuple
+except:
+    from struct import pack, unpack
+    from collections import namedtuple
+
 _R_WHOAMI = 0x0F
 _ID = 0x33
 _I2C_ADDRESS = 0x19
@@ -126,7 +129,7 @@ class PiicoDev_LIS3DH(object):
         """Return the accelerometer range [g]"""
         return self._rate
     
-    @range.setter
+    @rate.setter
     def rate(self, r):
         """Set the data rate [Hz]. Valid rates are 1, 10, 25, 50, 100, 200, 400"""
         valid_rates = {0:0b0000, 1:0b0001, 10:0b0010, 25:0b0011, 50:0b0100, 100:0b0101, 200:0b0110, 400:0b0111} # key:value -> rate[Hz] : binary code for register
