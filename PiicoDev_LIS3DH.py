@@ -7,6 +7,8 @@ Requires the PiicoDev Unified Library
 https://github.com/CoreElectronics/CE-PiicoDev-Unified
 
 Based on work from from https://github.com/adafruit/Adafruit_CircuitPython_LIS3DH
+
+v1.0.0 rc
 """
 
 from PiicoDev_Unified import *
