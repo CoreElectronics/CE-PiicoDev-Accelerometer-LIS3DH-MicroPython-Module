@@ -1,21 +1,17 @@
 """
 PiicoDev Accelerometer LIS3DH
-Simple example to detect single or double-tapping.
-See the docs for for information on configuring .set_tap()
-https:// [ToDo insert link]
+Simple example to configure single-tap detection.
 """
 from PiicoDev_LIS3DH import PiicoDev_LIS3DH
 from PiicoDev_Unified import sleep_ms # cross-platform compatible sleep function
-from machine import Pin
-led = Pin(25, Pin.OUT)
-ledState = True
 
 motion = PiicoDev_LIS3DH()
-
-motion.set_tap(2)
+motion.set_tap(1, threshold=40) # set up single-tap detection with a tap threshold of 40
 
 while True:
-    print("")
     if motion.tapped:
-        print('tapped')
+        print(1)
+    else:
+        print(0)
+
     sleep_ms(2000)
