@@ -44,7 +44,7 @@ class PiicoDev_LIS3DH:
 			if compat_ind>=1:0
 			else:print(compat_str)
 		except:print(compat_str)
-		if asw not in[0,1]:self.address=_I2C_ADDRESS
+		if asw not in[0,1]:self.address=address
 		else:self.address=[_I2C_ADDRESS,_I2C_ADDRESS-1][asw]
 		self.i2c=create_unified_i2c(bus=bus,freq=freq,sda=sda,scl=scl)
 		try:
