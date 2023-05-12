@@ -199,6 +199,22 @@ class PiicoDev_LIS3DH(object):
             self._read(_INT1_SRC,1) # clear interrupt pin
             return True
         return False
+
+    @property
+    def tapped_axis(self):
+        raw = self._read(_CLICKSRC,1)
+        axis_tapped =[False,False,False]
+        if raw & 0x40:
+            print(raw-64)
+            if raw & 0x04: # If respective bit is filled, flag the axes that was activated
+                axis_tapped[2] = True 
+            if raw & 0x02:
+                axis_tapped[1] = True
+            if raw & 0x01:
+                axis_tapped[0] = True
+            self._read(_INT1_SRC,1)
+        return axis_tapped
+    
     
     def shake(self, threshold=15, avg_count=40, total_delay=100):
         """Detect when the accelerometer is shaken. Optional parameters:
